@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>SITOKO</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <link rel="shortcut icon" href="static/img/favicon.ico" type="image/x-icon" />
+      <link href="static/css/bootstrap.min.css" rel="stylesheet" media="screen">
+      <link href="static/css/sitoko.css" rel="stylesheet" media="screen">
+   </head>
+   <body>
+	  <nav id="navigation" class="container navbar navbar-default" role="navigation">
+         <ul class="nav nav-pills">
+		    <li><img src="static/img/sitoko-header-black.png" alt="SITOKO logo" class="img-responsive" /></li>
+		    <li>
+			   <a class="dropdown-toggle" data-toggle="dropdown" href="#"><strong>Master</strong><span class="caret"></span></a>
+			   <ul class="dropdown-menu">
+			      <li><a href="#">Barang</a></li>
+				  <li><a href="#">Harga Barang</a></li>
+				  <li><a href="#">Impor Data Barang</a></li>
+				  <li><a href="#">Impor Data Harga Barang</a></li>
+			   </ul>
+			</li>
+			<li>
+			   <a class="dropdown-toggle" data-toggle="dropdown" href="#"><strong>Penjualan</strong><span class="caret"></span></a>
+			   <ul class="dropdown-menu">
+			      <li><a href="#">Transaksi Baru</a></li>
+				  <li><a href="#">Pembayaran</a></li>
+			   </ul>
+			</li>
+         </ul>
+	  </nav>
+	  
+	  <div class="container">
+	     <h4 class="text-center">Transaksi Penjualan</h4>
+		 <form class="form-inline form-horizontal" role="form">
+		    <div class="row">
+			   <div class="col-md-2 text-right">
+			      <label for="customer-name" class="control-label">Customer: </label>
+			   </div>
+			   <div class="col-md-2">
+			      <input type="text" id="customerName" class="form-control input-sm" />
+			   </div>
+			   <div class="col-md-2 text-right">
+			      <label for="saleType" class="control-label">Jenis Penjualan: </label>
+			   </div>
+			   <div class="col-md-2">
+			      <select id="saleType" class="form-control input-sm">
+			         <option value="KULAKAN">KULAKAN</option>
+			         <option value="ECERAN">ECERAN</option>
+			      </select>
+			   </div>
+			   <div id="errorMessage" class="col-md-4 text-center">
+			   </div>
+			</div>
+			<div class="table-responsive">
+               <table id="saleTransactionTable" class="table table-striped table-bordered table-hover table-condensed">
+		          <thead>
+			         <tr>
+			            <th>No.</th>
+                        <th>Barcode</th>
+                        <th>Nama Barang</th>
+                        <th>Jumlah</th>
+                        <th>Satuan</th>
+                        <th>Harga per Satuan</th>
+                        <th>Harga Total</th>
+						<th></th>
+                     </tr>
+                  </thead>
+                  <tbody id="saleTableBody"></tbody>
+				  <tfoot>
+				     <tr>
+                        <td colspan="6" class="text-center"><strong>HARGA TOTAL</strong></td>
+				        <td class="text-right"><strong id="totalPrice">0</strong></td>
+						<td class="text-center"><button id="addRowButton" type="button" class="btn btn-primary btn-xs">Tambah Baris</button></td>
+                     </tr>
+				  </tfoot>
+               </table>
+			</div>
+			
+			<div id="paymentPanel" class="row">
+			   <div class="col-md-4 text-right">
+			      <label for="payment">Pembayaran: </label>
+			   </div>
+			   <div class="col-md-2">
+			      <input type="text" id="payment" class="form-control" value="0" />
+			   </div>
+			   <div class="col-md-6">
+			      <label>&nbsp;&nbsp;Kembalian: <label>
+			      <span id="exchange"></span>
+			   </div>
+			</div>
+			<br />
+			<div id="buttonPanel" class="text-center">
+			   <button id="printReceiptButton" type="button" class="btn btn-primary">Cetak Struk</button>
+			   <button id="saveSaleButton" type="button" class="btn btn-primary">Simpan Transaksi</button>
+			</div>
+         </form>
+      </div>    
+	  
+	  <div id="footer" class="container">
+	     <div class="row">
+	        <div class="col-md-4 text-left">
+               <a href="http://seagatesoft.com" target="_new">
+                  <img src="static/img/sitoko-header-black-small.png" alt="Sitoko" border="0" />
+			   </a>
+			   <br />Sistem Informasi Toko
+            </div>
+		    <div class="col-md-4 text-center"><p>Copyright © 2013. SeaGateSoft.</p></div>
+		    <div class="col-md-4 text-right">
+               <a href="http://seagatesoft.com" target="_new">
+                  <img src="static/img/nuevasystem-small.png" alt="Nuevasystem" border="0" />
+               </a>
+            </div>
+		 </div>
+      </div>
+	  
+	  <table style="display: none">
+	     <tbody id="saleDetailTemplate">
+	        <tr id="saleDetail-{rowKey}">
+               <td id="itemNumber-{rowKey}" class="text-right">{rowNumber}</td>
+               <td>
+                  <input id="itemBarcode-{rowKey}" type="text" class="form-control input-sm itemBarcodeInput" />
+                  <button id="barcodeButton-{rowKey}" type="button" value="{rowKey}" class="btn btn-primary btn-xs barcodeButton">Cari</button>
+               </td>
+               <td><input id="itemName-{rowKey}" type="text" class="form-control input-sm itemNameInput" /></td>
+               <td><input id="quantity-{rowKey}" type="text" class="form-control input-sm quantityInput" value="1" /></td>
+               <td class="text-center">
+                  <select id="unitId-{rowKey}" class="form-control input-sm unitSelect">
+                     <option value="0">bungkus</option>
+                     <option value="1">pak</option>
+                     <option value="2">dus</option>
+                     <option value="3">renteng</option>
+                     <option value="4">lusin</option>
+                  </select>
+               </td>
+			   <td class="text-right">
+			      <span id="pricePerUnit-{rowKey}">0</span>
+			      <br />
+			      <button id="customPriceButton-{rowKey}" type="button" value="{rowKey}" class="btn btn-primary btn-xs customPriceButton">Isi Sendiri</button>
+			   </td>
+			   <td class="text-right"><span id="pricePerItemTotal-{rowKey}">0</span></td>
+			   <td class="text-center">
+			      <button id="deleteRowButton-{rowKey}" type="button" value="{rowKey}" class="btn btn-primary btn-xs deleteRowButton">Hapus</button>
+			   </td>
+            </tr>
+		 </tbody>
+	  </table>
+
+	  <div id="customPriceModal" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="customPriceLabel" tabindex="-1">
+	     <div class="modal-dialog">
+		    <div class="modal-content">
+			   <div class="modal-header">
+			      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				  <h5 id="customPriceLabel" class="modal-title">Harga Spesial</h5>
+			   </div>
+			   <div class="modal-body">
+			      <form id="customPriceForm" role="form" onsubmit="return false;">
+				     <input id="inputCustomPrice" type="text" class="form-control input-sm" />
+				  </form>
+			   </div>
+			   <div class="modal-footer">
+			      <button id="setCustomPriceButton" type="button" class="btn btn-primary btn-xs">Set Harga</button>
+				  <button id="cancelCustomPriceButton" type="button" class="btn btn-primary btn-xs" data-dismiss="modal">Batal</button>
+			   </div>
+			</div>
+		 </div>
+	  </div>
+	  
+	  <div id="deleteRowWarning" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="deleteRowLabel" tabindex="-1">
+	     <div class="modal-dialog">
+		    <div class="modal-content">
+			   <div class="modal-header">
+			      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				  <h5 id="deleteRowLabel" class="modal-title">Konfirmasi</h5>
+			   </div>
+			   <div class="modal-body">
+			      <div class="alert alert-warning">Anda yakin ingin menghapus baris ini?</div>
+			   </div>
+			   <div class="modal-footer">
+			      <button id="confirmDeleteRowButton" type="button" class="btn btn-primary btn-xs">Ya</button>
+				  <button id="cancelDeleteRowButton" type="button" class="btn btn-primary btn-xs" data-dismiss="modal">Tidak</button>
+			   </div>
+			</div>
+		 </div>
+	  </div>
+	  
+	  <table style="display: none;">
+         <thead id="tablePrintHeader">
+            <tr>
+			   <th colspan="7"><strong>TOKO BU TITIK</strong></th>
+			</tr>
+			<tr>
+			   <td colspan="7" class="alignCenter">Jalan Magelang km. 11, Sleman</td>
+			</tr>
+			<tr>
+			   <td colspan="7" class="alignCenter">(0274) 868852)</td>
+			</tr>
+			<tr>
+			   <td colspan="7">{saleId} - {customerName}</td>
+			</tr>
+			<tr>
+			   <td colspan="7">{time}</td>
+			</tr>
+            <tr>
+	           <th>No.</th>
+		       <th>ID</th>
+		       <th>Barang</th>
+		       <th>Jumlah</th>
+		       <th>Satuan</th>
+		       <th>Harga</th>
+		       <th>Total</th>
+	        </tr>
+         </thead>
+         <tbody id="tablePrintBody">
+            <tr>
+	           <td class="alignRight">{rowNumber}.</td>
+		       <td class="alignRight">{itemId}</td>
+		       <td>{itemName}</td>
+		       <td class="alignRight">{quantity}</td>
+		       <td>{unitName}</td>
+		       <td class="alignRight">{pricePerUnit}</td>
+		       <td class="alignRight">{totalPricePerUnit}</td>
+	        </tr>
+         </tbody>
+         <tfoot id="tablePrintFooter">
+            <tr>
+               <td colspan="6" class="alignCenter"><strong>HARGA TOTAL</strong></td>
+		       <td class="alignRight"><strong>{totalPrice}</strong></td>
+	        </tr>
+	        <tr>
+	           <td colspan="6" class="alignCenter"><strong>PEMBAYARAN</strong></td>
+		       <td class="alignRight"><strong>{payment}</strong></td>
+	        </tr>
+	        <tr>
+	           <td colspan="6" class="alignCenter"><strong>KEMBALIAN</strong></td>
+		       <td class="alignRight"><strong>{exchange}</strong></td>
+	        </tr>
+         </tfoot>
+      </table>
+	  
+      <script src="static/js/jquery-2.0.3.min.js"></script>
+      <script src="static/js/bootstrap.min.js"></script>
+	  <script src="static/js/sitoko.js"></script>
+	  <script src="static/js/sitoko_sale.js"></script>
+	  <script src="static/js/sitoko_sale_detail.js"></script>
+	  <script type="text/javascript">
+	     SalePage.unitTypes.put(0, 'bungkus');
+		 SalePage.unitTypes.put(1, 'pak');
+		 SalePage.unitTypes.put(2, 'dus');
+		 SalePage.unitTypes.put(3, 'renteng');
+		 SalePage.unitTypes.put(4, 'lusin');
+	  </script>
+   </body>
+</html>
