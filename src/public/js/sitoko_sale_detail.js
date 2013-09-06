@@ -152,7 +152,7 @@ SalePage.updateUnitId = function(event) {
 };
 SalePage.printReceipt = function() {
    // TODO: validate data
-   var receiptPageOpen = '<!DOCTYPE html><html><head><title>SITOKO</title><link href="static/css/print.css" rel="stylesheet" media="screen"><link href="static/css/print.css" rel="stylesheet" media="print"></head><body><table><thead>';
+   var receiptPageOpen = '<!DOCTYPE html><html><head><title>SITOKO</title><link href="/static/css/print.css" rel="stylesheet" media="screen"><link href="/static/css/print.css" rel="stylesheet" media="print"></head><body><table><thead>';
    var receiptPageClose = '</tfoot></table><button type="button" id="closeButton" class="no-print" onclick="window.close();">Tutup</button></body></html>';
    
    var tableHeaderSubstitutes = {'time': SalePage.formatDateTime(new Date())};
