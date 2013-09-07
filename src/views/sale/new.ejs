@@ -79,11 +79,9 @@
                <td><input id="quantity-{rowKey}" type="text" class="form-control input-sm quantityInput" value="1" /></td>
                <td class="text-center">
                   <select id="unitId-{rowKey}" class="form-control input-sm unitSelect">
-                     <option value="0">bungkus</option>
-                     <option value="1">pak</option>
-                     <option value="2">dus</option>
-                     <option value="3">renteng</option>
-                     <option value="4">lusin</option>
+				  <% unitTypes.forEach( function(unitType) {%>
+                     <option value="<%= unitType.id %>"><%= unitType.nama %></option>
+				  <% })%>	 
                   </select>
                </td>
 			   <td class="text-right">
@@ -197,11 +195,9 @@
 	  <script src="/static/js/sitoko_sale.js"></script>
 	  <script src="/static/js/sitoko_sale_detail.js"></script>
 	  <script type="text/javascript">
-	     SalePage.unitTypes.put(0, 'bungkus');
-		 SalePage.unitTypes.put(1, 'pak');
-		 SalePage.unitTypes.put(2, 'dus');
-		 SalePage.unitTypes.put(3, 'renteng');
-		 SalePage.unitTypes.put(4, 'lusin');
+	  <% unitTypes.forEach( function(unitType) {%>
+	     SalePage.unitTypes.put(<%= unitType.id %>, '<%= unitType.nama %>');
+	  <% })%>
 	  </script>
 
 <% include ../footer %>
