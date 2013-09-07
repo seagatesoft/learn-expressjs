@@ -14,8 +14,9 @@
 			   </div>
 			   <div class="col-md-2">
 			      <select id="saleType" class="form-control input-sm">
-			         <option value="KULAKAN">KULAKAN</option>
-			         <option value="ECERAN">ECERAN</option>
+				     <% SALE_TYPES.forEach(function(saleType) {%>
+			         <option value="<%= saleType %>"><%= saleType %></option>
+					 <% }) %>
 			      </select>
 			   </div>
 			   <div id="errorMessage" class="col-md-4 text-center">
