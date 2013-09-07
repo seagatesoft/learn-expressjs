@@ -190,11 +190,19 @@
       </table>
 	  
       <script src="/static/js/jquery-2.0.3.min.js"></script>
+	  <script src="/static/js/jquery-ui-1.10.3.custom.min.js"></script>
       <script src="/static/js/bootstrap.min.js"></script>
 	  <script src="/static/js/sitoko.js"></script>
 	  <script src="/static/js/sitoko_sale.js"></script>
 	  <script src="/static/js/sitoko_sale_detail.js"></script>
 	  <script type="text/javascript">
+	  $('#saleType').val('<%= SALE_TYPES[0] %>');
+	  SalePage.sale.saleType = '<%= SALE_TYPES[0] %>';
+	  $('#unitId-'+SalePage.lastSaleDetailKey).val(<%= unitTypes[0].id %>);
+	  SalePage.sale.saleDetailsMap.get(SalePage.lastSaleDetailKey).unitId = $('#unitId-'+SalePage.lastSaleDetailKey).val();
+	  <% SALE_TYPES.forEach( function(saleType) {%>
+	     SALE_TYPES.push('<%= saleType %>');
+	  <% })%>
 	  <% unitTypes.forEach( function(unitType) {%>
 	     SalePage.unitTypes.put(<%= unitType.id %>, '<%= unitType.nama %>');
 	  <% })%>

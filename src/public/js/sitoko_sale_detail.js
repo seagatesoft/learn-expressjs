@@ -1,11 +1,13 @@
 // declare global variables
 var MONEY = new Money;
 var VALIDATOR = new Validator;
+var SALE_TYPES = [];
 var SalePage = new Page;
 // declare Data Model
 SalePage.sale = new Sale;
 SalePage.sale.saleDetailsMap = new Map;
 SalePage.unitTypes = new Map;
+SalePage.itemNameMap = new Map;
 // declare Page state variables
 SalePage.lastSaleDetailKey = -1;
 
@@ -75,14 +77,69 @@ SalePage.setCustomPrice = function() {
 SalePage.addSaleDetailRow =  function() {
    var substitutes = {};
    substitutes['rowKey'] = ++SalePage.lastSaleDetailKey;
-   SalePage.sale.saleDetailsMap.put(substitutes['rowKey'], new SaleDetail(null, '', '', 1, 0, 0, false));
+   SalePage.sale.saleDetailsMap.put(substitutes['rowKey'], new SaleDetail(null, '', '', 1, 1, 0, false));
    substitutes['rowNumber'] = SalePage.sale.saleDetailsMap.size();
    var rowHtml = SalePage.substitute($('#saleDetailTemplate').html(), substitutes);
    $('#saleTableBody').append(rowHtml);
+   $('#itemName-'+substitutes['rowKey']).autocomplete({
+	  minLength: 2,
+	  delay: 500,
+	  source: function(request, response) {
+	     $.ajax('/items/searchByName?itemName='+request.term, {'dataType': 'json'})
+		 .done( function(data) {
+		       var itemNames = [];
+		       if (data.found) {
+			      // clear item name lookup table
+				  if (!SalePage.itemNameMap.isEmpty()) {
+				     SalePage.itemNameMap.clear();
+                  }
+
+			      data.items.forEach(function (item) {
+				     // fill item name lookup table
+					 SalePage.itemNameMap.put(item.nama, item.id);
+					 // fill auto complete list
+					 itemNames.push(item.nama);
+				  });
+			   }
+			   response(itemNames);
+         });
+      },
+	  change: function(event, ui) {
+	     var splitted = $(event.target).attr('id').split('-');
+		 var rowKey = parseInt(splitted[1]);
+		 var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
+		 
+		 if (ui.item == null) {
+		    saleDetail.itemId = null;
+			saleDetail.pricePerUnit = 0;
+			saleDetail.isCustomPrice = false;
+			SalePage.updateRowAndTotalPrice(rowKey);
+		 } else {
+		    saleDetail.itemId = SalePage.itemNameMap.get(ui.item.value);
+			SalePage.getPriceForRow(rowKey);
+         }
+	  }
+   });
    
    // unless initial load set focus to the first row input
    if (substitutes['rowKey'] > 0) {
       $('#itemBarcode-'+substitutes['rowKey']).focus();
+   }
+};
+SalePage.getPriceForRow = function (rowKey) {
+   var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
+   var idPattern = /^\d+$/;
+   
+   if (SALE_TYPES.indexOf(SalePage.sale.saleType) != -1 && idPattern.test(saleDetail.itemId) && idPattern.test(saleDetail.unitId)) {
+      $.ajax('/items/getPricePerUnit', {
+         'data': {'saleType': SalePage.sale.saleType, 'itemId': saleDetail.itemId, 'unitId': saleDetail.unitId},
+	     'dataType': 'json'
+      })
+      .done(function (data) {
+         saleDetail.pricePerUnit = data.pricePerUnit;
+         saleDetail.isCustomPrice = false;
+         SalePage.updateRowAndTotalPrice(rowKey);
+      });
    }
 };
 SalePage.confirmDeleteSaleDetailRow =  function(event) {
@@ -149,6 +206,7 @@ SalePage.updateUnitId = function(event) {
    var rowKey = parseInt(splitted[1]);
    var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
    saleDetail.unitId = parseInt($(event.target).val());
+   SalePage.getPriceForRow(rowKey);
 };
 SalePage.printReceipt = function() {
    // TODO: validate data
@@ -252,4 +310,4 @@ $('#deleteRowWarning').on('hidden.bs.modal',
 
 // insert initial dynamic element
 SalePage.addSaleDetailRow();
-$('#customer-name').focus();
+$('#customerName').focus();
