@@ -2,6 +2,8 @@
 var MONEY = new Money;
 var VALIDATOR = new Validator;
 var SALE_TYPES = [];
+var ajaxLoader = new Image();
+ajaxLoader.src = '/static/img/ajax-loader.gif';
 var SalePage = new Page;
 // declare Data Model
 SalePage.sale = new Sale;
@@ -140,6 +142,7 @@ SalePage.getPriceForRow = function (rowKey) {
          saleDetail.isCustomPrice = false;
          SalePage.updateRowAndTotalPrice(rowKey);
       });
+	  $('#pricePerUnit-'+rowKey).html('<img src="'+ajaxLoader.src+'" alt="dapatkan harga..." />');
    }
 };
 SalePage.confirmDeleteSaleDetailRow =  function(event) {
