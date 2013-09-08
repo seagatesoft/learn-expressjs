@@ -337,6 +337,38 @@ SalePage.printReceipt = function() {
       alert('Tidak bisa melakukan pencetakan struk karena: \n'+saleDataValidation.message);
    }
 };
+SalePage.saveTransaction = function() {
+   var saleDataValidation = SalePage.validateSaleData();
+   
+   if (saleDataValidation.valid) {
+      $.ajax('/sale/saveTransaction', {
+	     'type': 'post',
+         'data': JSON.stringify(SalePage.sale),
+		 'contentType': 'application/json',
+	     'dataType': 'json'
+      })
+      .done(function (data) {
+	     // TODO: release blocking loader
+		 if (data.success) {
+		    // disable all input except print button
+			$('#newSaleForm').find(':input').prop('disabled', true);
+			$('#printReceiptButton').prop('disabled', false);
+		    // change save button to new transaction button
+			$('#saveSaleButton').prop('disabled', false);
+			$('#saveSaleButton').unbind('click');
+			$('#saveSaleButton').click(function () {location.href='/sale/new'});
+			$('#saveSaleButton').html('Buat Transaksi Baru');
+			$('#saveSaleButton').focus();
+			alert('Transaksi telah berhasil disimpan.');
+		 } else {
+		    alert('Transaksi gagal disimpan: \n'+data.message);
+		 }
+	  });
+	  // TODO: blocking loader
+   } else {
+      alert('Transaksi tidak bisa disimpan: \n'+saleDataValidation.message);
+   }
+};
 
 // EVENT BINDINGS
 // quantity updated
@@ -358,6 +390,7 @@ $('#confirmDeleteRowButton').click(SalePage.deleteSaleDetailRow);
 $('#payment').focus(SalePage.removePaymentDanger);
 $('#payment').change(SalePage.updateExchange);
 $('#payment').blur(SalePage.validatePayment);
+// print button
 $('#printReceiptButton').click(SalePage.printReceipt);
 // sale type changed
 $('#saleType').change(SalePage.updateSaleType);
@@ -365,6 +398,8 @@ $('#saleType').change(SalePage.updateSaleType);
 $(document).on('change', '.itemNameInput', null, SalePage.updateItemName);
 // unit id changed
 $(document).on('change', '.unitSelect', null, SalePage.updateUnitId);
+// save transaction
+$('#saveSaleButton').click(SalePage.saveTransaction);
 
 // Boostrap customization
 $('#customPriceModal').on('shown.bs.modal', 

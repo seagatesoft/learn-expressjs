@@ -16,6 +16,15 @@ app.get('/sale/new', function(req, res) {
    });
 });
 
+app.post('/sale/saveTransaction', function(req, res) {
+   // TODO
+   // var json = req.body;
+   // validate data
+   // save transaction
+   // send response
+   res.send({'success': true, 'message': ''});
+});
+
 app.get('/items/searchByName', function(req, res) {
    var itemName = req.query.itemName;
    if (/^(\w|\d)(\w|\d| )*/.test(itemName)) {
@@ -51,8 +60,12 @@ app.get('/items/getPricePerUnit', function(req, res) {
 });
 
 app.post('/items/getPriceForItems', function(req, res) {
+   // TODO
+   // validate data
+   // get price
+   // send response
    var json = req.body;
-   
+
    for (var index=0;index<json.items.length;index++) {
       json.items[index].pricePerUnit = 10000;
    }
