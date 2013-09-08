@@ -14,6 +14,11 @@ SalePage.itemNameMap = new Map;
 SalePage.lastSaleDetailKey = -1;
 
 // declare Page event handlers
+SalePage.updateRowPrice = function(rowKey) {
+   var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
+   $('#pricePerUnit-'+rowKey).text(MONEY.display(saleDetail.pricePerUnit));
+   $('#pricePerItemTotal-'+rowKey).text(MONEY.display(saleDetail.getTotalPrice()));
+};
 SalePage.updateTotalPrice = function() {
    var totalPrice = SalePage.sale.getTotalPrice();
    var exchange = parseFloat($('#payment').val()) - totalPrice;
@@ -21,9 +26,7 @@ SalePage.updateTotalPrice = function() {
    $('#exchange').text(MONEY.display(exchange));
 };
 SalePage.updateRowAndTotalPrice = function(rowKey) {
-   var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
-   $('#pricePerUnit-'+rowKey).text(MONEY.display(saleDetail.pricePerUnit));
-   $('#pricePerItemTotal-'+rowKey).text(MONEY.display(saleDetail.getTotalPrice()));
+   SalePage.updateRowPrice(rowKey);
    SalePage.updateTotalPrice();
 };
 SalePage.updateQuantity = function(event) {
@@ -130,9 +133,8 @@ SalePage.addSaleDetailRow =  function() {
 };
 SalePage.getPriceForRow = function (rowKey) {
    var saleDetail = SalePage.sale.saleDetailsMap.get(rowKey);
-   var idPattern = /^\d+$/;
    
-   if (SALE_TYPES.indexOf(SalePage.sale.saleType) != -1 && idPattern.test(saleDetail.itemId) && idPattern.test(saleDetail.unitId)) {
+   if (SALE_TYPES.indexOf(SalePage.sale.saleType) != -1 && VALIDATOR.validatePositiveInteger(saleDetail.itemId) && SalePage.unitTypes.containsKey(saleDetail.unitId)) {
       $.ajax('/items/getPricePerUnit', {
          'data': {'saleType': SalePage.sale.saleType, 'itemId': saleDetail.itemId, 'unitId': saleDetail.unitId},
 	     'dataType': 'json'
@@ -197,6 +199,37 @@ SalePage.removePaymentDanger = function(event) {
 };
 SalePage.updateSaleType = function(event) {
    SalePage.sale.saleType = $(event.target).val();
+   
+   if (SalePage.validatePricingParams()) {
+      var pricingParams = {'saleType': SalePage.saleType, 'items': []};
+	  var saleDetailsKeys = SalePage.sale.saleDetailsMap.getKeys();
+	  var saleDetails = SalePage.sale.saleDetailsMap.getValues();
+	  
+	  for (var index=0;index<saleDetails.length;index++) {
+	     pricingParams.items.push({'itemId': saleDetails[index].itemId, 'unitId': saleDetails[index].unitId, 'rowKey': saleDetailsKeys[index]});
+	  }
+
+      $.ajax('/items/getPriceForItems', {
+	     'type': 'post',
+         'data': JSON.stringify(pricingParams),
+		 'contentType': 'application/json',
+	     'dataType': 'json'
+      })
+      .done(function (data) {
+         for (var index=0;index<data.items.length;index++) {
+		    var item = data.items[index];
+		    var saleDetail = SalePage.sale.saleDetailsMap.get(item.rowKey);
+			saleDetail.pricePerUnit = item.pricePerUnit;
+            saleDetail.isCustomPrice = false;
+            SalePage.updateRowPrice(item.rowKey);
+		 }
+		 SalePage.updateTotalPrice();
+      });
+	  
+	  for (var index=0;index<saleDetailsKeys.length;index++) {
+	     $('#pricePerUnit-'+saleDetailsKeys[index]).html('<img src="'+ajaxLoader.src+'" alt="dapatkan harga..." />');
+	  }
+   }
 };
 SalePage.updateItemName = function(event) {
    var splitted = $(event.target).attr('id').split('-');
@@ -211,44 +244,98 @@ SalePage.updateUnitId = function(event) {
    saleDetail.unitId = parseInt($(event.target).val());
    SalePage.getPriceForRow(rowKey);
 };
-SalePage.printReceipt = function() {
-   // TODO: validate data
-   var receiptPageOpen = '<!DOCTYPE html><html><head><title>SITOKO</title><link href="/static/css/print.css" rel="stylesheet" media="screen"><link href="/static/css/print.css" rel="stylesheet" media="print"></head><body><table><thead>';
-   var receiptPageClose = '</tfoot></table><button type="button" id="closeButton" class="no-print" onclick="window.close();">Tutup</button></body></html>';
-   
-   var tableHeaderSubstitutes = {'time': SalePage.formatDateTime(new Date())};
-   tableHeaderSubstitutes['saleId'] = SalePage.sale.saleId == undefined ? '' : SalePage.sale.saleId;
-   //tableHeaderSubstitutes['saleType'] = SalePage.sale.saleType == undefined ? $('#saleType').val() : SalePage.sale.saleType;
-   tableHeaderSubstitutes['customerName'] = SalePage.sale.customerName == undefined ? $('#customerName').val() : SalePage.sale.customerName;
-   var tableHeader = SalePage.substitute($('#tablePrintHeader').html(), tableHeaderSubstitutes);
-   
-   var totalPrice = SalePage.sale.getTotalPrice();
-   var exchange = SalePage.sale.payment-totalPrice;
-   var tableFooterSubstitutes = {'totalPrice': MONEY.display(totalPrice)};
-   tableFooterSubstitutes['payment'] = SalePage.sale.payment ? MONEY.display(SalePage.sale.payment) : '-';
-   tableFooterSubstitutes['exchange'] = isNaN(exchange) ? '-' : MONEY.display(exchange);
-   var tableFooter = SalePage.substitute($('#tablePrintFooter').html(), tableFooterSubstitutes);
-   
-   var receiptPageArray = [];
-   receiptPageArray.push(receiptPageOpen, tableHeader, '</thead><tbody>');
-   var tableBody = $('#tablePrintBody').html();
-   var rowValues = SalePage.sale.saleDetailsMap.getValues();
-   var rowValuesCount = rowValues.length;
-   
-   for (var index=0; index<rowValuesCount; index++) {
-      var saleDetail = rowValues[index];
-      var tableBodySubstitutes = {'rowNumber': (index+1), 'itemId': saleDetail.itemId, 'itemName': saleDetail.itemName, 'quantity': saleDetail.quantity, 'unitName': SalePage.unitTypes.get(saleDetail.unitId), 'pricePerUnit': MONEY.display(saleDetail.pricePerUnit), 'totalPricePerUnit': MONEY.display(saleDetail.getTotalPrice())};
-	   receiptPageArray.push(SalePage.substitute(tableBody, tableBodySubstitutes));
+SalePage.validateSaleData = function() {
+   var validationResult = {'valid': false};
+   if (SALE_TYPES.indexOf(SalePage.sale.saleType) == -1) {
+      validationResult.message = 'Jenis Penjualan tidak valid: '+SalePage.sale.saleType;
+	  return validationResult;
    }
    
-   receiptPageArray.push('</tbody>', tableFooter, receiptPageClose);
-   var receiptWindow = window.open('', '', 'left=300, top=200, width=700, height=400, toolbar=no, resizeable=no, menubar=no, location=no');
-   receiptWindow.document.open();
-   receiptWindow.document.write(receiptPageArray.join(''));
-   receiptWindow.document.close();
-   receiptWindow.document.getElementById('closeButton').focus();
-   receiptWindow.print();
-   //html2canvas(receiptWindow.document.getElementById('receiptTable'), {onrendered: function(canvas) {receiptWindow.document.getElementById('renderedReceipt').appendChild(canvas);}});
+   var saleDetails = SalePage.sale.saleDetailsMap.getValues();
+   for (var index=0;index<saleDetails.length; index++) {
+      if (!VALIDATOR.validatePositiveInteger(saleDetails[index].itemId)) {
+	     validationResult.message = 'Barang pada baris ke-'+(index+1)+' tidak valid!';
+	     return validationResult;
+	  }
+	  if (!VALIDATOR.validatePositiveInteger(saleDetails[index].quantity)) {
+	     validationResult.message = 'Jumlah barang pada baris ke-'+(index+1)+' tidak valid: '+saleDetails[index].quantity;
+	     return validationResult;
+	  }
+	  if (!SalePage.unitTypes.containsKey(saleDetails[index].unitId)) {
+	     validationResult.message = 'Satuan barang pada baris ke-'+(index+1)+' tidak valid! '+saleDetails[index].unitId;
+	     return validationResult;
+	  }
+	  if (!VALIDATOR.validatePositiveNumber(saleDetails[index].pricePerUnit)) {
+	     validationResult.message = 'Harga barang pada baris ke-'+(index+1)+' tidak valid:'+saleDetails[index].pricePerUnit;
+	     return validationResult;
+	  }
+   }
+   
+   validationResult.valid = true;
+   return validationResult;
+};
+SalePage.validatePricingParams = function() {
+   var validationResult = {'valid': false};
+   if (SALE_TYPES.indexOf(SalePage.sale.saleType) == -1) {
+      validationResult.message = 'Jenis Penjualan tidak valid: '+SalePage.sale.saleType;
+	  return validationResult;
+   }
+   
+   var saleDetails = SalePage.sale.saleDetailsMap.getValues();
+   for (var index=0;index<saleDetails.length; index++) {
+      if (!VALIDATOR.validatePositiveInteger(saleDetails[index].itemId)) {
+	     validationResult.message = 'Barang pada baris ke-'+(index+1)+' tidak valid!';
+	     return validationResult;
+	  }
+	  if (!SalePage.unitTypes.containsKey(saleDetails[index].unitId)) {
+	     validationResult.message = 'Satuan barang pada baris ke-'+(index+1)+' tidak valid! '+saleDetails[index].unitId;
+	     return validationResult;
+	  }
+   }
+   
+   validationResult.valid = true;
+   return validationResult;
+};
+SalePage.printReceipt = function() {
+   var saleDataValidation = SalePage.validateSaleData();
+   if (saleDataValidation.valid) {
+      var receiptWindow = window.open('', '', 'left=300, top=200, width=700, height=400, toolbar=no, resizeable=no, menubar=no, location=no');
+      receiptWindow.document.open();
+	  receiptWindow.document.write('<!DOCTYPE html><html><head><title>SITOKO</title><link href="/static/css/print.css" rel="stylesheet" media="screen"><link href="/static/css/print.css" rel="stylesheet" media="print"></head><body><table><thead>');
+   
+      var tableHeaderSubstitutes = {'time': SalePage.formatDateTime(new Date())};
+      tableHeaderSubstitutes['saleId'] = SalePage.sale.saleId == undefined ? '' : SalePage.sale.saleId;
+      tableHeaderSubstitutes['customerName'] = SalePage.sale.customerName == undefined ? $('#customerName').val() : SalePage.sale.customerName;
+      var tableHeader = SalePage.substitute($('#tablePrintHeader').html(), tableHeaderSubstitutes);
+	  receiptWindow.document.write(tableHeader);
+	  receiptWindow.document.write('</thead><tbody>');
+	  
+	  var tableBody = $('#tablePrintBody').html();
+      var rowValues = SalePage.sale.saleDetailsMap.getValues();
+      var rowValuesCount = rowValues.length;
+   
+      for (var index=0; index<rowValuesCount; index++) {
+	     var saleDetail = rowValues[index];
+         var tableBodySubstitutes = {'rowNumber': (index+1), 'itemId': saleDetail.itemId, 'itemName': saleDetail.itemName, 'quantity': saleDetail.quantity, 'unitName': SalePage.unitTypes.get(saleDetail.unitId), 'pricePerUnit': MONEY.display(saleDetail.pricePerUnit), 'totalPricePerUnit': MONEY.display(saleDetail.getTotalPrice())};
+	     receiptWindow.document.write(SalePage.substitute(tableBody, tableBodySubstitutes));
+      }
+	  
+      var totalPrice = SalePage.sale.getTotalPrice();
+      var exchange = SalePage.sale.payment-totalPrice;
+      var tableFooterSubstitutes = {'totalPrice': MONEY.display(totalPrice)};
+      tableFooterSubstitutes['payment'] = SalePage.sale.payment ? MONEY.display(SalePage.sale.payment) : '-';
+      tableFooterSubstitutes['exchange'] = isNaN(exchange) ? '-' : MONEY.display(exchange);
+      var tableFooter = SalePage.substitute($('#tablePrintFooter').html(), tableFooterSubstitutes);
+	  receiptWindow.document.write('</tbody>');
+	  receiptWindow.document.write(tableFooter);
+	  receiptWindow.document.write('</tfoot></table><button type="button" id="closeButton" class="no-print" onclick="window.close();">Tutup</button></body></html>');
+	  receiptWindow.document.close();
+      receiptWindow.document.getElementById('closeButton').focus();
+      receiptWindow.print();
+      //html2canvas(receiptWindow.document.getElementById('receiptTable'), {onrendered: function(canvas) {receiptWindow.document.getElementById('renderedReceipt').appendChild(canvas);}});
+   } else {
+      alert('Tidak bisa melakukan pencetakan struk karena: \n'+saleDataValidation.message);
+   }
 };
 
 // EVENT BINDINGS

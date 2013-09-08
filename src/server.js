@@ -4,6 +4,7 @@ var db = require('./database');
 var SALE_TYPES = ['KULAKAN', 'ECERAN'];
 
 app.use('/static', express.static('public'));
+app.use(express.bodyParser());
 
 app.get('/sale/new', function(req, res) {
    db.getItemUnitTypeList(function (err, unitTypes) {
@@ -47,6 +48,16 @@ app.get('/items/getPricePerUnit', function(req, res) {
    } else {
       res.send({'pricePerUnit': 0, 'found': false, 'errorMessage': 'Invalid price search parameter!'});
    }
+});
+
+app.post('/items/getPriceForItems', function(req, res) {
+   var json = req.body;
+   
+   for (var index=0;index<json.items.length;index++) {
+      json.items[index].pricePerUnit = 10000;
+   }
+   
+   res.send(json);
 });
 
 app.set('view engine', 'ejs');

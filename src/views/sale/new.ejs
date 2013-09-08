@@ -199,7 +199,7 @@
 	  $('#saleType').val('<%= SALE_TYPES[0] %>');
 	  SalePage.sale.saleType = '<%= SALE_TYPES[0] %>';
 	  $('#unitId-'+SalePage.lastSaleDetailKey).val(<%= unitTypes[0].id %>);
-	  SalePage.sale.saleDetailsMap.get(SalePage.lastSaleDetailKey).unitId = $('#unitId-'+SalePage.lastSaleDetailKey).val();
+	  SalePage.sale.saleDetailsMap.get(SalePage.lastSaleDetailKey).unitId = parseInt($('#unitId-'+SalePage.lastSaleDetailKey).val());
 	  <% SALE_TYPES.forEach( function(saleType) {%>
 	     SALE_TYPES.push('<%= saleType %>');
 	  <% })%>
