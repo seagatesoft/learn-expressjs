@@ -348,7 +348,7 @@ SalePage.saveTransaction = function() {
 	     'dataType': 'json'
       })
       .done(function (data) {
-	     // TODO: release blocking loader
+	     $('#savingLoader').modal('hide');
 		 if (data.success) {
 		    // disable all input except print button
 			$('#newSaleForm').find(':input').prop('disabled', true);
@@ -364,7 +364,7 @@ SalePage.saveTransaction = function() {
 		    alert('Transaksi gagal disimpan: \n'+data.message);
 		 }
 	  });
-	  // TODO: blocking loader
+	  $('#savingLoader').modal({backdrop: 'static', keyboard: false});
    } else {
       alert('Transaksi tidak bisa disimpan: \n'+saleDataValidation.message);
    }
