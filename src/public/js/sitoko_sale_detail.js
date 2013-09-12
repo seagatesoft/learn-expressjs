@@ -341,9 +341,22 @@ SalePage.saveTransaction = function() {
    var saleDataValidation = SalePage.validateSaleData();
    
    if (saleDataValidation.valid) {
+      var saleData = {'saleType': SalePage.sale.saleType, 'payment': null, 'items': []};
+	  
+	  if (VALIDATOR.validatePositiveNumber(SalePage.sale.payment)) {
+	     saleData.payment = SalePage.sale.payment;
+	  }
+	  
+	  var saleDetails = SalePage.sale.saleDetailsMap.getValues();
+	  
+	  for (var index=0;index<saleDetails.length;index++) {
+	     var item = {'itemId': saleDetails[index].itemId, 'quantity': saleDetails[index].quantity, 'unitId': saleDetails[index].unitId, 'pricePerUnit': saleDetails[index].pricePerUnit, 'isCustomPrice': saleDetails[index].isCustomPrice};
+		 saleData.items.push(item);
+	  }
+
       $.ajax('/sale/saveTransaction', {
 	     'type': 'post',
-         'data': JSON.stringify(SalePage.sale),
+         'data': JSON.stringify(saleData),
 		 'contentType': 'application/json',
 	     'dataType': 'json'
       })
@@ -361,7 +374,7 @@ SalePage.saveTransaction = function() {
 			$('#saveSaleButton').focus();
 			alert('Transaksi telah berhasil disimpan.');
 		 } else {
-		    alert('Transaksi gagal disimpan: \n'+data.message);
+		    alert('Transaksi gagal disimpan: \n'+data.errorMessage);
 		 }
 	  });
 	  $('#savingLoader').modal({backdrop: 'static', keyboard: false});

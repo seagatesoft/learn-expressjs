@@ -18,12 +18,19 @@ app.get('/sale/new', function(req, res) {
 });
 
 app.post('/sale/saveTransaction', function(req, res) {
-   // TODO
-   // var json = req.body;
-   // validate data
-   // save transaction
-   // send response
-   res.send({'success': true, 'message': ''});
+   var saleData = req.body;
+   // TODO: validate data
+
+   db.saveSaleTransaction(saleData, function (err) {
+      var transactionResultStatus = {'success': true};
+      
+	  if (err) {
+	     transactionResultStatus.success = false;
+		 transactionResultStatus.errorMessage = err.message;
+	  }
+	  
+	  res.send(transactionResultStatus);
+   });
 });
 
 app.get('/items/searchByName', function(req, res) {
@@ -80,7 +87,8 @@ app.post('/items/getPriceForItems', function(req, res) {
 				  item.unitId, 
 				  function(err, itemWithPrice) {
 					 if (err) {
-			            console.log(err);
+			            // TODO: handle error
+						console.log(err);
 					 } else {
 					    if (itemWithPrice.length > 0) {
 						   itemPrice.pricePerUnit = itemWithPrice[0].harga_per_satuan;
