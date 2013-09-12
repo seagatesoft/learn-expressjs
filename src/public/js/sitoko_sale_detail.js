@@ -201,7 +201,7 @@ SalePage.updateSaleType = function(event) {
    SalePage.sale.saleType = $(event.target).val();
    
    if (SalePage.validatePricingParams()) {
-      var pricingParams = {'saleType': SalePage.saleType, 'items': []};
+      var pricingParams = {'saleType': SalePage.sale.saleType, 'items': []};
 	  var saleDetailsKeys = SalePage.sale.saleDetailsMap.getKeys();
 	  var saleDetails = SalePage.sale.saleDetailsMap.getValues();
 	  

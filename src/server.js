@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var db = require('./database');
+var async = require('async');
 var SALE_TYPES = ['KULAKAN', 'ECERAN'];
 
 app.use('/static', express.static('public'));
@@ -60,17 +61,59 @@ app.get('/items/getPricePerUnit', function(req, res) {
 });
 
 app.post('/items/getPriceForItems', function(req, res) {
-   // TODO
-   // validate data
-   // get price
-   // send response
-   var json = req.body;
-
-   for (var index=0;index<json.items.length;index++) {
-      json.items[index].pricePerUnit = 10000;
-   }
+   var requestJson = req.body;
+   var responseJson = {'saleType': requestJson.saleType};
    
-   res.send(json);
+   if (SALE_TYPES.indexOf(requestJson.saleType) != -1) {
+      var positiveIntegerPattern = /^[1-9]\d*$/;
+	  var nonNegativeIntegerPattern = /^\d+$/;
+	  var itemPrices = [];
+      async.each(
+	     requestJson.items,
+		 function (item, callback) {
+		    var itemPrice = {'itemId': item.itemId, 'unitId': item.unitId, 'rowKey': item.rowKey, 'pricePerUnit': 0};
+
+		    if (positiveIntegerPattern.test(item.itemId) && positiveIntegerPattern.test(item.unitId) && nonNegativeIntegerPattern.test(item.rowKey)) {
+			   db.getPricePerUnit(
+			      requestJson.saleType, 
+				  item.itemId, 
+				  item.unitId, 
+				  function(err, itemWithPrice) {
+					 if (err) {
+			            console.log(err);
+					 } else {
+					    if (itemWithPrice.length > 0) {
+						   itemPrice.pricePerUnit = itemWithPrice[0].harga_per_satuan;
+						}
+					 }
+					 
+					 itemPrices.push(itemPrice);
+					 callback();
+                  }
+			   );
+			} else {
+			   itemPrices.push(itemPrice);
+			   callback();
+			}
+		 },
+		 function (err) {
+		    if (err) {
+			   responseJson.success = false;
+			   responseJson.errorMessage = err.message;
+			} else {
+			   responseJson.success = true;
+			}
+
+			responseJson.items = itemPrices;
+			res.send(responseJson);
+		 }
+	  );
+   } else {
+      responseJson.items = requestJson.items;
+	  responseJson.success = false;
+	  responseJson.errorMessage = 'Invalid sale type!';
+	  res.send(responseJson);
+   }
 });
 
 app.set('view engine', 'ejs');
