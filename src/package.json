@@ -7,6 +7,6 @@
       "express": "3.3.8",
       "ejs": "0.8.4",
 	  "mysql": "2.0.0-alpha9",
-	  "asyncjs": "0.2.9"
+	  "async": "0.2.9"
    }
 }
